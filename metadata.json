@@ -1,0 +1,8 @@
+{
+  "name": "College Geeks",
+  "description": "Campus empire simulation game where players work jobs, build their tower with allies, battle rivals in PvP arena, and communicate via live campus chat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

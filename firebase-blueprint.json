@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "gameState": {
+      "title": "GameState",
+      "description": "Aggregated persistent campus game state and player records",
+      "type": "object",
+      "properties": {
+        "payload": {
+          "type": "string",
+          "description": "Serialized JSON game state payload"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        },
+        "playerCount": {
+          "type": "number",
+          "description": "Total registered players"
+        }
+      },
+      "required": ["payload", "updatedAt"]
+    },
+    "chatHistory": {
+      "title": "ChatHistory",
+      "description": "Persistent campus chat messages across channels",
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "string",
+          "description": "Serialized JSON chat messages list"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last chat update"
+        },
+        "count": {
+          "type": "number",
+          "description": "Number of stored messages"
+        }
+      },
+      "required": ["messages", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/campus_meta/{docId}": {
+      "schema": "gameState",
+      "description": "Metadata collection for campus state and chat records"
+    }
+  }
+}

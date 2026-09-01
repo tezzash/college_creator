@@ -1,0 +1,24 @@
+{
+  "name": "college-geeks-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "test": "tsc -p tsconfig.json && node --test dist/src/**/*.spec.js",
+    "test:benchmark": "tsc -p tsconfig.json && node --test dist/src/simulation/simulation.benchmark.spec.js",
+    "simulate:example": "tsc -p tsconfig.json && node dist/scripts/run-simulation.js",
+    "start": "tsc -p tsconfig.json && node dist/src/main.js",
+    "seed:game": "tsc -p tsconfig.json && node dist/scripts/seed-game.js",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:validate": "prisma validate --schema prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "prisma": "6.19.3",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BattleAction {
+  PUNCH
+  FACE_OFF
+  FIGHT
+  PRANK
+  SPY
+}
+
+enum CashTransactionType {
+  STARTING_CASH
+  JOB_REWARD
+  TOWER_ROOM_UNLOCK
+  ALLY_HIRE
+  ALLY_UPGRADE
+  ALLY_EVICT
+  ALLY_EVICT_REFUND
+  PVP_STEAL_CREDIT
+  PVP_STEAL_DEBIT
+  ADMIN_ADJUSTMENT
+  BANK_DEPOSIT
+  BANK_DEPOSIT_FEE
+  BANK_WITHDRAW
+  FURNITURE_PURCHASE
+  COSMETIC_PURCHASE
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Player {
+  id                  String                @id @default(uuid())
+  username            String                @unique
+  email               String                @unique
+  passwordHash        String                @map("password_hash")
+  cash                Decimal               @default(1000) @db.Decimal(18, 2)
+  bankCash            Decimal               @default(0) @map("bank_cash") @db.Decimal(18, 2)
+  energy              Int                   @default(10)
+  morale              Int                   @default(10)
+  power               Int                   @default(0)
+  smartness           Int                   @default(0)
+  winStreak           Int                   @default(0) @map("win_streak")
+  highestStreak       Int                   @default(0) @map("highest_streak")
+  totalPvPWins        Int                   @default(0) @map("total_pvp_wins")
+  totalPvPLosses      Int                   @default(0) @map("total_pvp_losses")
+  totalPlundered      Decimal               @default(0) @map("total_plundered") @db.Decimal(18, 2)
+  equippedTitle       String                @default("Freshman Novice") @map("equipped_title")
+  avatarId            String                @default("avatar-coder") @map("avatar_id")
+  avatarAura          String                @default("aura-none") @map("avatar_aura")
+  avatarFrame         String                @default("frame-neon") @map("avatar_frame")
+  avatarOutfit        String                @default("outfit-hoodie") @map("avatar_outfit")
+  avatarHeadwear      String                @default("headwear-none") @map("avatar_headwear")
+  avatarAccessory     String                @default("acc-laptop") @map("avatar_accessory")
+  ownedCosmetics      String[]              @default(["avatar-coder", "avatar-varsity", "avatar-scholar", "avatar-freshman", "aura-none", "outfit-hoodie", "headwear-none", "acc-laptop", "frame-neon"]) @map("owned_cosmetics")
+  customBio           String                @default("Ready to conquer the campus empire! 💻💸") @map("custom_bio")
+  claimedMilestones   String[]              @default([]) @map("claimed_milestones")
+  totalJobsCompleted  Int                   @default(0) @map("total_jobs_completed")
+  totalBankDeposited  Decimal               @default(0) @map("total_bank_deposited") @db.Decimal(18, 2)
+  dailyStreak         Int                   @default(1) @map("daily_streak")
+  dailyQuestsDate     String?               @map("daily_quests_date")
+  dailyQuestsState    Json?                 @map("daily_quests_state")
+  pinnedUntil         DateTime?             @map("pinned_until")
+  isBot               Boolean               @default(false) @map("is_bot")
+  lastEnergyUpdate    DateTime              @default(now()) @map("last_energy_update")
+  lastMoraleUpdate    DateTime              @default(now()) @map("last_morale_update")
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+
+  towerRooms          TowerRoom[]
+  activeJobs          ActiveJob[]
+  attacks             Battle[]              @relation("BattleAttacker")
+  defenses            Battle[]              @relation("BattleDefender")
+  cashTransactions    CashTransaction[]
+  playerFurniture     PlayerDormFurniture[]
+  sentFriendships     Friendship[]          @relation("FriendshipSender")
+  receivedFriendships Friendship[]          @relation("FriendshipReceiver")
+  sentMessages        Message[]             @relation("MessageSender")
+  receivedMessages    Message[]             @relation("MessageReceiver")
+
+  @@map("players")
+}
+
+model TowerRoom {
+  id         String         @id @default(uuid())
+  playerId   String         @map("player_id")
+  roomNumber Int            @map("room_number")
+  unlockCost Decimal        @map("unlock_cost") @db.Decimal(18, 2)
+  unlocked   Boolean        @default(false)
+  unlockedAt DateTime       @default(now()) @map("unlocked_at")
+  player     Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  occupants  RoomOccupant[]
+
+  @@unique([playerId, roomNumber])
+  @@index([playerId])
+  @@map("tower_rooms")
+}
+
+model RoomOccupant {
+  id            String    @id @default(uuid())
+  towerRoomId   String    @map("tower_room_id")
+  allyId        String    @map("ally_id")
+  level         Int       @default(1)
+  totalInvested Decimal   @default(0) @map("total_invested") @db.Decimal(18, 2)
+  hiredAt       DateTime  @default(now()) @map("hired_at")
+  towerRoom     TowerRoom @relation(fields: [towerRoomId], references: [id], onDelete: Cascade)
+
+  @@unique([towerRoomId])
+  @@index([allyId])
+  @@map("room_occupants")
+}
+
+model Job {
+  id              String      @id @default(uuid())
+  name            String
+  durationSeconds Int         @map("duration_seconds")
+  rewardCash      Decimal     @map("reward_cash") @db.Decimal(18, 2)
+  activeJobs      ActiveJob[]
+
+  @@map("jobs")
+}
+
+model ActiveJob {
+  id         String   @id @default(uuid())
+  playerId   String   @map("player_id")
+  jobId      String   @map("job_id")
+  startedAt  DateTime @default(now()) @map("started_at")
+  finishesAt DateTime @map("finishes_at")
+  collected  Boolean  @default(false)
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  job        Job      @relation(fields: [jobId], references: [id])
+
+  @@index([playerId, collected])
+  @@index([finishesAt])
+  @@map("active_jobs")
+}
+
+model Battle {
+  id         String       @id @default(uuid())
+  attackerId String       @map("attacker_id")
+  defenderId String       @map("defender_id")
+  action     BattleAction
+  success    Boolean
+  cashStolen Decimal      @default(0) @map("cash_stolen") @db.Decimal(18, 2)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  attacker   Player       @relation("BattleAttacker", fields: [attackerId], references: [id], onDelete: Cascade)
+  defender   Player       @relation("BattleDefender", fields: [defenderId], references: [id], onDelete: Cascade)
+
+  @@index([attackerId, createdAt])
+  @@index([defenderId, createdAt])
+  @@map("battles")
+}
+
+model CashTransaction {
+  id             String              @id @default(uuid())
+  playerId       String              @map("player_id")
+  type           CashTransactionType
+  amount         Decimal             @db.Decimal(18, 2)
+  balanceAfter   Decimal             @map("balance_after") @db.Decimal(18, 2)
+  reference      String?
+  idempotencyKey String?             @unique @map("idempotency_key")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  player         Player              @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, createdAt])
+  @@index([type])
+  @@map("cash_transactions")
+}
+
+model PlayerDormFurniture {
+  id          String   @id @default(uuid())
+  playerId    String   @map("player_id")
+  furnitureId String   @map("furniture_id")
+  equippedAt  DateTime @default(now()) @map("equipped_at")
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, furnitureId])
+  @@index([playerId])
+  @@map("player_dorm_furniture")
+}
+
+model Friendship {
+  id             String           @id @default(uuid())
+  senderId       String           @map("sender_id")
+  receiverId     String           @map("receiver_id")
+  status         FriendshipStatus @default(PENDING)
+  lastGiftSentAt DateTime?        @map("last_gift_sent_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  sender         Player           @relation("FriendshipSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver       Player           @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@index([senderId, status])
+  @@index([receiverId, status])
+  @@map("friendships")
+}
+
+model Message {
+  id         String    @id @default(uuid())
+  senderId   String    @map("sender_id")
+  receiverId String    @map("receiver_id")
+  content    String    @db.VarChar(500)
+  isRead     Boolean   @default(false) @map("is_read")
+  readAt     DateTime? @map("read_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  sender     Player    @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   Player    @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId, createdAt])
+  @@index([receiverId, isRead])
+  @@map("messages")
+}

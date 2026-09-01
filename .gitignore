@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Production build outputs
+dist/
+
+# Local Environment Variables & secrets
+.env
+.env.local
+.env.*.local
+.env.production
+!.env.example
+
+# Local runtime & test artifacts
+.campus_game_store.json
+coverage/
+*.log
+
+# OS & Editor files
+.DS_Store
+.ai/
+college-geeks-starter.zip
