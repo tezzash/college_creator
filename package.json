@@ -8,7 +8,8 @@
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "lint": "tsc --noEmit",
-    "test": "NODE_ENV=test tsx --test \"backend/src/**/*.spec.ts\""
+    "test": "NODE_ENV=test node --test --import tsx $(find backend/src -name \"*.spec.ts\" | sort)",
+    "postinstall": "prisma generate --schema=backend/prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
