@@ -21,7 +21,7 @@ async function startServer() {
   const app = express();
   app.set('trust proxy', 1);
   const appModule = new AppModule();
-  const PORT = 3000;
+  const PORT = appModule.config.port;
   const httpServer = createHttpServer(app);
 
   app.use(cors({
