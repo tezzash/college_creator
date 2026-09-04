@@ -67,6 +67,18 @@ jobs:
       - name: Apply Prisma Migrations
         run: npx prisma migrate deploy --schema=backend/prisma/schema.prisma
 
+      - name: Grant Role Privileges for RLS
+        run: |
+          npx prisma db execute --stdin --schema=backend/prisma/schema.prisma << 'EOF'
+          GRANT USAGE ON SCHEMA public TO authenticated, anon;
+          GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated, anon;
+          GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated, anon;
+          GRANT ALL ON ALL ROUTINES IN SCHEMA public TO authenticated, anon;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO authenticated, anon;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO authenticated, anon;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO authenticated, anon;
+          EOF
+
       - name: Lint & Typecheck
         run: npm run lint
 
