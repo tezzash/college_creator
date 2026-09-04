@@ -13,6 +13,26 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: college_geeks_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/college_geeks_ci
+      PORT: 3000
+
     steps:
       - uses: actions/checkout@v4
 
@@ -28,11 +48,30 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate --schema=backend/prisma/schema.prisma
 
+      - name: Initialize PostgreSQL Roles
+        run: |
+          npx prisma db execute --stdin --schema=backend/prisma/schema.prisma << 'EOF'
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'authenticated') THEN
+              CREATE ROLE authenticated;
+            END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'anon') THEN
+              CREATE ROLE anon;
+            END IF;
+          END
+          $$;
+          GRANT authenticated, anon TO ci;
+          EOF
+
+      - name: Apply Prisma Migrations
+        run: npx prisma migrate deploy --schema=backend/prisma/schema.prisma
+
       - name: Lint & Typecheck
         run: npm run lint
 
-      - name: Run Test Suite
-        run: npm test
-
       - name: Build Application
         run: npm run build
+
+      - name: Run Test Suite
+        run: npm test
