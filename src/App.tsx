@@ -1,21 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import {
-  GraduationCap,
-  Home,
-  Briefcase,
-  Building2,
-  Swords,
-  Wallet,
-  Zap,
-  Sparkles,
-  Menu,
-  LogOut,
-  Calendar,
-  Trophy,
-  Award,
-  Users
-} from 'lucide-react';
+import { GraduationCap } from 'lucide-react';
 import { api } from './api';
 import { Player } from './types';
 import { AuthScreen } from './components/AuthScreen';
@@ -34,11 +19,17 @@ import { InboxButton } from './components/InboxButton';
 import { AvatarDisplay } from './components/AvatarDisplay';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { CompactQuickMenu } from './components/CompactQuickMenu';
+import { NavigationShell, MainNavTab } from './components/navigation/NavigationShell';
+import { MinimalGlobalHUD } from './components/navigation/MinimalGlobalHUD';
+import { DormPillarHub } from './components/navigation/DormPillarHub';
+import { CampusPillarHub } from './components/navigation/CampusPillarHub';
+import { ArenaPillarHub } from './components/navigation/ArenaPillarHub';
+import { CommunityPillarHub } from './components/navigation/CommunityPillarHub';
 
 export function App() {
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'home' | 'jobs' | 'tower' | 'battle'>('home');
+  const [activeTab, setActiveTab] = useState<MainNavTab>('dorm');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isBankOpen, setIsBankOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
@@ -148,7 +139,7 @@ export function App() {
   const handleSignOut = () => {
     api.setToken(null);
     setPlayer(null);
-    setActiveTab('home');
+    setActiveTab('dorm');
     showToast('Signed out successfully.', 'info');
   };
 
@@ -171,7 +162,7 @@ export function App() {
         <AuthScreen
           onSignedIn={(p) => {
             setPlayer(p);
-            setActiveTab('home');
+            setActiveTab('dorm');
             fetchBadges();
           }}
           showToast={showToast}
@@ -181,111 +172,22 @@ export function App() {
     );
   }
 
-  const hasPendingBadges = claimableQuestsCount > 0 || claimableTrophiesCount > 0 || unreadInboxCount > 0;
+  const totalBadgeCount =
+    claimableQuestsCount + claimableTrophiesCount + pendingFriendsCount + unreadInboxCount;
+  const hasPendingBadges = totalBadgeCount > 0;
 
   return (
     <div className="min-h-screen bg-[#090B10] text-slate-100 flex flex-col selection:bg-purple-500 pb-16 md:pb-20">
-      {/* Top HUD Bar - Clean, fully responsive, zero cut-off */}
-      <header className="sticky top-0 z-40 bg-[#0E111B]/95 backdrop-blur-md border-b border-slate-800/80">
-        <div className="max-w-4xl mx-auto px-2.5 sm:px-4 h-13 flex items-center justify-between gap-1 sm:gap-2">
-          {/* Left: Avatar & Username trigger */}
-          <button
-            onClick={() => setIsProfileOpen(true)}
-            className="flex items-center gap-1.5 p-1 rounded-xl bg-[#141824] hover:bg-[#1A2030] border border-purple-500/30 transition-all cursor-pointer group shrink-0"
-            title="Open Student Profile & Closet"
-          >
-            <AvatarDisplay
-              avatarId={player.avatarId}
-              avatarFrame={player.avatarFrame}
-              avatarOutfit={player.avatarOutfit}
-              avatarAccessory={player.avatarAccessory}
-              size="sm"
-            />
-            <span className="text-[11px] font-black text-white group-hover:text-purple-300 max-w-[65px] sm:max-w-[100px] truncate">
-              {player.username}
-            </span>
-          </button>
-
-          {/* Center: Pocket Cash, Energy, Morale */}
-          <div className="flex items-center gap-1 sm:gap-1.5">
-            {/* Cash */}
-            <button
-              onClick={() => setIsBankOpen(true)}
-              className="flex items-center gap-1 bg-[#141824] hover:bg-[#1A2030] border border-emerald-500/30 px-2 py-1 rounded-lg text-[11px] font-black text-emerald-300 transition-colors cursor-pointer"
-              title="Campus Cash & Vault"
-            >
-              <Wallet className="w-3 h-3 text-emerald-400" />
-              <span>${Number(player.cash).toLocaleString()}</span>
-            </button>
-
-            {/* Universal Energy */}
-            <div
-              className="flex items-center gap-1 bg-[#141824] border border-amber-500/30 px-2 py-1 rounded-lg text-[11px] font-black text-amber-300 shadow-sm"
-              title="Universal Energy: Used for Fight, Prank & Spy (1⚡ each)"
-            >
-              <Zap className="w-3 h-3 text-amber-400" />
-              <span>{player.energy ?? 0}/{player.maxEnergy ?? 10}</span>
-            </div>
-          </div>
-
-          {/* Right: Inbox Button, Friends Button, Quick Menu & Sign Out */}
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Campus Private Inbox Button */}
-            <InboxButton
-              onClick={() => {
-                setInboxPartnerId(null);
-                setIsInboxOpen(true);
-              }}
-              unreadCount={unreadInboxCount}
-              variant="icon"
-            />
-
-            {/* Friends Button */}
-            <button
-              onClick={() => setIsFriendsOpen(true)}
-              className={`relative p-1.5 sm:p-2 rounded-xl bg-[#141824] hover:bg-[#1A2030] border ${
-                pendingFriendsCount > 0
-                  ? 'border-rose-500/50 bg-rose-950/20 text-rose-400'
-                  : 'border-cyan-500/30 text-cyan-400'
-              } hover:text-white transition-all cursor-pointer flex items-center justify-center`}
-              title={`Campus Buddies & Friends ${pendingFriendsCount > 0 ? `(${pendingFriendsCount} pending)` : ''}`}
-            >
-              <Users className="w-4 h-4" />
-              {pendingFriendsCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                  <span className="relative inline-flex items-center justify-center rounded-full h-4 min-w-[16px] px-1 bg-rose-600 border border-[#0E111B] text-[8px] font-black text-white shadow-lg shadow-rose-600/50">
-                    {pendingFriendsCount > 99 ? '99+' : pendingFriendsCount}
-                  </span>
-                </span>
-              )}
-            </button>
-
-            {/* Quick Menu Button (Drawer for Bank, Quests, Trophies, Leaderboard) */}
-            <button
-              onClick={() => setIsQuickMenuOpen(true)}
-              className="relative p-1.5 rounded-xl bg-[#141824] hover:bg-[#1A2030] border border-slate-750 text-slate-300 hover:text-white transition-colors cursor-pointer"
-              title="Campus Quick Menu"
-            >
-              <Menu className="w-4 h-4" />
-              {hasPendingBadges && (
-                <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] bg-emerald-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border border-[#0E111B] animate-bounce">
-                  {claimableQuestsCount + claimableTrophiesCount + pendingFriendsCount + unreadInboxCount}
-                </span>
-              )}
-            </button>
-
-            {/* Direct Logout */}
-            <button
-              onClick={handleSignOut}
-              className="p-1.5 rounded-xl bg-[#141824] hover:bg-rose-950/40 border border-slate-750 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
-              title="Exit / Sign Out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Minimal Global HUD Bar: Pocket Cash, Bank Cash, Energy/countdown, unified menu access */}
+      <MinimalGlobalHUD
+        player={player}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenBank={() => setIsBankOpen(true)}
+        onOpenMenu={() => setIsQuickMenuOpen(true)}
+        onRefreshPlayer={fetchPlayer}
+        hasPendingBadges={hasPendingBadges}
+        totalBadgeCount={totalBadgeCount}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-2.5 sm:px-4 pt-3">
@@ -305,21 +207,20 @@ export function App() {
         )}
 
         <AnimatePresence mode="wait">
-          {activeTab === 'home' && (
+          {activeTab === 'dorm' && (
             <motion.div
-              key="home"
+              key="dorm"
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.1 }}
             >
-              <HomePage
+              <DormPillarHub
                 player={player}
                 onRefresh={fetchPlayer}
                 onSignOut={handleSignOut}
-                onNavigate={setActiveTab}
-                claimableQuestsCount={claimableQuestsCount}
-                claimableTrophiesCount={claimableTrophiesCount}
+                showToast={showToast}
+                onOpenProfile={() => setIsProfileOpen(true)}
                 onOpenBank={() => setIsBankOpen(true)}
                 onOpenDailyPlanner={() => setIsDailyPlannerOpen(true)}
                 onOpenTrophies={() => setIsTrophiesOpen(true)}
@@ -329,172 +230,88 @@ export function App() {
                   setInboxPartnerId(null);
                   setIsInboxOpen(true);
                 }}
+                onNavigateArena={() => setActiveTab('arena')}
+                claimableQuestsCount={claimableQuestsCount}
+                claimableTrophiesCount={claimableTrophiesCount}
                 pendingFriendsCount={pendingFriendsCount}
                 unreadInboxCount={unreadInboxCount}
               />
             </motion.div>
           )}
 
-          {activeTab === 'jobs' && (
+          {activeTab === 'campus' && (
             <motion.div
-              key="jobs"
+              key="campus"
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.1 }}
             >
-              <JobsPage onPlayerUpdated={fetchPlayer} showToast={showToast} />
-            </motion.div>
-          )}
-
-          {activeTab === 'tower' && (
-            <motion.div
-              key="tower"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.1 }}
-            >
-              <TowerPage
+              <CampusPillarHub
                 player={player}
                 onPlayerUpdated={fetchPlayer}
                 showToast={showToast}
-                onNavigate={(t) => setActiveTab(t)}
+                onOpenDailyPlanner={() => setIsDailyPlannerOpen(true)}
+                onOpenTrophies={() => setIsTrophiesOpen(true)}
+                claimableQuestsCount={claimableQuestsCount}
+                claimableTrophiesCount={claimableTrophiesCount}
               />
             </motion.div>
           )}
 
-          {activeTab === 'battle' && (
+          {activeTab === 'arena' && (
             <motion.div
-              key="battle"
+              key="arena"
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.1 }}
             >
-              <BattlePage player={player} onPlayerUpdated={fetchPlayer} showToast={showToast} />
+              <ArenaPillarHub
+                player={player}
+                onPlayerUpdated={fetchPlayer}
+                showToast={showToast}
+                onOpenLeaderboards={() => setIsLeaderboardOpen(true)}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'community' && (
+            <motion.div
+              key="community"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.1 }}
+            >
+              <CommunityPillarHub
+                player={player}
+                onOpenFriends={() => setIsFriendsOpen(true)}
+                onOpenInbox={() => {
+                  setInboxPartnerId(null);
+                  setIsInboxOpen(true);
+                }}
+                onOpenLeaderboards={() => setIsLeaderboardOpen(true)}
+                onOpenBank={() => setIsBankOpen(true)}
+                pendingFriendsCount={pendingFriendsCount}
+                unreadInboxCount={unreadInboxCount}
+              />
             </motion.div>
           )}
         </AnimatePresence>
       </main>
 
-      {/* Bottom Navigation Bar (Mobile) - Fixed bottom, high z-index */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0E111C]/95 backdrop-blur-xl border-t border-slate-800/80 md:hidden">
-        <div className="grid grid-cols-4 max-w-lg mx-auto h-14">
-          <button
-            onClick={() => setActiveTab('home')}
-            className={`relative flex flex-col items-center justify-center gap-0.5 font-extrabold text-[9px] tracking-wider uppercase transition-colors cursor-pointer ${
-              activeTab === 'home' ? 'text-purple-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <div className="relative">
-              <Home className="w-4 h-4" />
-              {unreadInboxCount > 0 ? (
-                <span className="absolute -top-1 -right-1.5 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border border-[#0E111C]"></span>
-                </span>
-              ) : hasPendingBadges ? (
-                <span className="absolute -top-1 -right-1.5 min-w-[12px] h-[12px] bg-emerald-500 text-white text-[7px] font-black rounded-full flex items-center justify-center">
-                  !
-                </span>
-              ) : null}
-            </div>
-            <span>Home</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('jobs')}
-            className={`flex flex-col items-center justify-center gap-0.5 font-extrabold text-[9px] tracking-wider uppercase transition-colors cursor-pointer ${
-              activeTab === 'jobs' ? 'text-purple-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Jobs</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('tower')}
-            className={`flex flex-col items-center justify-center gap-0.5 font-extrabold text-[9px] tracking-wider uppercase transition-colors cursor-pointer ${
-              activeTab === 'tower' ? 'text-purple-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Building2 className="w-4 h-4" />
-            <span>Tower</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('battle')}
-            className={`flex flex-col items-center justify-center gap-0.5 font-extrabold text-[9px] tracking-wider uppercase transition-colors cursor-pointer ${
-              activeTab === 'battle' ? 'text-purple-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Swords className="w-4 h-4" />
-            <span>PvP</span>
-          </button>
-        </div>
-      </nav>
-
-      {/* Desktop Navigation Floating Dock */}
-      <div className="hidden md:flex fixed bottom-5 left-1/2 -translate-x-1/2 z-40 bg-[#0F121C]/90 backdrop-blur-xl border border-slate-800/80 p-1.5 rounded-2xl shadow-2xl">
-        <button
-          onClick={() => setActiveTab('home')}
-          className={`relative px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
-            activeTab === 'home'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-          }`}
-        >
-          <div className="relative">
-            <Home className="w-4 h-4" />
-            {unreadInboxCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              </span>
-            )}
-          </div>
-          <span>Home</span>
-          {unreadInboxCount > 0 && (
-            <span className="min-w-[15px] h-[15px] bg-rose-600 text-white text-[8px] font-black rounded-full flex items-center justify-center px-1 shadow-sm">
-              {unreadInboxCount > 99 ? '99+' : unreadInboxCount}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('jobs')}
-          className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
-            activeTab === 'jobs'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-          }`}
-        >
-          <Briefcase className="w-4 h-4" />
-          <span>Jobs</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('tower')}
-          className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
-            activeTab === 'tower'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-          }`}
-        >
-          <Building2 className="w-4 h-4" />
-          <span>Tower</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('battle')}
-          className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
-            activeTab === 'battle'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-          }`}
-        >
-          <Swords className="w-4 h-4" />
-          <span>PvP Arena</span>
-        </button>
-      </div>
+      {/* 4-Pillar Reusable Navigation Shell (Mobile Bottom Bar & Desktop Dock) */}
+      <NavigationShell
+        activeTab={activeTab}
+        onSelectTab={(tab) => setActiveTab(tab)}
+        pendingBadges={{
+          dorm: false,
+          campus: claimableQuestsCount + claimableTrophiesCount > 0 ? claimableQuestsCount + claimableTrophiesCount : false,
+          arena: false,
+          community: pendingFriendsCount + unreadInboxCount > 0 ? pendingFriendsCount + unreadInboxCount : false,
+        }}
+      />
 
       {/* Campus Friends & Study Buddies Modal */}
       <FriendsModal
