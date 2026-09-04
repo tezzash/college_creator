@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getCloudDoc, saveCloudDoc } from './firebase.service';
+import { CANONICAL_BOTS } from './canonical-bots';
 
 export enum BattleAction {
   PUNCH = 'PUNCH',
@@ -340,167 +341,7 @@ export class PrismaService {
     this.players.delete('rival-chloe');
     this.players.delete('rival-tyler');
 
-    const rivals = [
-      {
-        id: 'rival-sam',
-        isBot: true,
-        username: 'Freshman_Sam',
-        email: 'sam@campus.edu',
-        passwordHash: 'mock',
-        cash: 950,
-        bankCash: 300,
-        energy: 10,
-        morale: 10,
-        basePower: 6,
-        baseSmartness: 6,
-        winStreak: 1,
-        highestStreak: 2,
-        totalPvPWins: 6,
-        totalPvPLosses: 7,
-        totalPlundered: 950,
-        equippedTitle: 'Freshman Novice',
-        avatarId: 'avatar-freshman',
-        avatarFrame: 'frame-slate',
-        avatarOutfit: 'outfit-hoodie',
-        avatarAccessory: 'acc-headphones',
-        customBio: 'Just trying to survive midterms and not get raided day one 📚',
-        claimedMilestones: [],
-        totalJobsCompleted: 5,
-        totalBankDeposited: 0,
-        rooms: [
-          { roomNumber: 1, allyId: 'ally-tutor', level: 1 },
-        ],
-        furniture: [],
-      },
-      {
-        id: 'rival-chad',
-        isBot: true,
-        username: 'Chad_Varsity',
-        email: 'chad@campus.edu',
-        passwordHash: 'mock',
-        cash: 1650,
-        bankCash: 800,
-        energy: 10,
-        morale: 10,
-        basePower: 16,
-        baseSmartness: 5,
-        winStreak: 3,
-        highestStreak: 5,
-        totalPvPWins: 16,
-        totalPvPLosses: 4,
-        totalPlundered: 3800,
-        equippedTitle: 'Varsity Captain',
-        avatarId: 'avatar-varsity',
-        avatarFrame: 'frame-crimson',
-        avatarOutfit: 'outfit-varsity',
-        avatarAccessory: 'acc-dumbbell',
-        customBio: 'Weights first, midterms maybe. Gym is my real lecture hall! 💪',
-        claimedMilestones: ['ms-combat-1', 'ms-combat-2', 'ms-power-1'],
-        totalJobsCompleted: 12,
-        totalBankDeposited: 1000,
-        rooms: [
-          { roomNumber: 1, allyId: 'ally-athlete', level: 2 },
-          { roomNumber: 2, allyId: 'ally-bouncer', level: 1 },
-        ],
-        furniture: ['furn-rack'],
-      },
-      {
-        id: 'rival-elliot',
-        isBot: true,
-        username: 'Hacker_Elliot',
-        email: 'elliot@campus.edu',
-        passwordHash: 'mock',
-        cash: 1850,
-        bankCash: 1800,
-        energy: 10,
-        morale: 10,
-        basePower: 8,
-        baseSmartness: 18,
-        winStreak: 2,
-        highestStreak: 4,
-        totalPvPWins: 13,
-        totalPvPLosses: 5,
-        totalPlundered: 3100,
-        equippedTitle: 'Silicon Prodigy',
-        avatarId: 'avatar-coder',
-        avatarFrame: 'frame-neon',
-        avatarOutfit: 'outfit-hoodie',
-        avatarAccessory: 'acc-shades',
-        customBio: 'Root access acquired. Your firewall is cute ⚡💻',
-        claimedMilestones: ['ms-smart-1', 'ms-tower-1'],
-        totalJobsCompleted: 20,
-        totalBankDeposited: 3000,
-        rooms: [
-          { roomNumber: 1, allyId: 'ally-coder', level: 2 },
-          { roomNumber: 2, allyId: 'ally-tutor', level: 2 },
-        ],
-        furniture: ['furn-server'],
-      },
-      {
-        id: 'rival-alex',
-        isBot: true,
-        username: 'GymRat_Alex',
-        email: 'alex@campus.edu',
-        passwordHash: 'mock',
-        cash: 1350,
-        bankCash: 900,
-        energy: 10,
-        morale: 10,
-        basePower: 22,
-        baseSmartness: 3,
-        winStreak: 4,
-        highestStreak: 6,
-        totalPvPWins: 19,
-        totalPvPLosses: 6,
-        totalPlundered: 4600,
-        equippedTitle: 'Quad Menace',
-        avatarId: 'avatar-athlete',
-        avatarFrame: 'frame-crimson',
-        avatarOutfit: 'outfit-street',
-        avatarAccessory: 'acc-dumbbell',
-        customBio: 'Arena is my playground. Step up or get punched! 🥊🔥',
-        claimedMilestones: ['ms-combat-1', 'ms-combat-2', 'ms-combat-3'],
-        totalJobsCompleted: 15,
-        totalBankDeposited: 1500,
-        rooms: [
-          { roomNumber: 1, allyId: 'ally-bouncer', level: 2 },
-          { roomNumber: 2, allyId: 'ally-athlete', level: 1 },
-        ],
-        furniture: ['furn-rack'],
-      },
-      {
-        id: 'rival-emma',
-        isBot: true,
-        username: 'Valedictorian_Emma',
-        email: 'emma@campus.edu',
-        passwordHash: 'mock',
-        cash: 2250,
-        bankCash: 5200,
-        energy: 10,
-        morale: 10,
-        basePower: 4,
-        baseSmartness: 24,
-        winStreak: 5,
-        highestStreak: 8,
-        totalPvPWins: 24,
-        totalPvPLosses: 2,
-        totalPlundered: 7200,
-        equippedTitle: 'Valedictorian',
-        avatarId: 'avatar-scholar',
-        avatarFrame: 'frame-gold',
-        avatarOutfit: 'outfit-lab',
-        avatarAccessory: 'acc-laptop',
-        customBio: '4.0 GPA, perfect algorithms, and all cash locked in the vault 🧠✨',
-        claimedMilestones: ['ms-wealth-1', 'ms-wealth-2', 'ms-smart-1', 'ms-combat-1'],
-        totalJobsCompleted: 35,
-        totalBankDeposited: 8000,
-        rooms: [
-          { roomNumber: 1, allyId: 'ally-valedictorian', level: 1 },
-          { roomNumber: 2, allyId: 'ally-tutor', level: 3 },
-        ],
-        furniture: ['furn-lock'],
-      },
-    ];
+    const rivals = CANONICAL_BOTS;
 
     for (const r of rivals) {
       const existing = this.players.get(r.id);
@@ -821,13 +662,22 @@ export class PrismaService {
         let count = 0;
         for (const [id, p] of this.players.entries()) {
           let match = true;
-          if (where.id && p.id !== where.id) match = false;
+          if (where.id) {
+            if (typeof where.id === 'object' && Array.isArray(where.id.in)) {
+              if (!where.id.in.includes(p.id)) match = false;
+            } else if (p.id !== where.id) {
+              match = false;
+            }
+          }
           if (where.cash?.gte !== undefined && p.cash < where.cash.gte) match = false;
           if (where.bankCash?.gte !== undefined && (p.bankCash ?? 0) < where.bankCash.gte) match = false;
           if (where.energy !== undefined && p.energy !== where.energy) match = false;
           if (where.morale !== undefined && p.morale !== where.morale) match = false;
           if (match) {
             count++;
+            if (data.pinnedUntil !== undefined) p.pinnedUntil = data.pinnedUntil;
+            if (data.hospitalUntil !== undefined) p.hospitalUntil = data.hospitalUntil;
+            if (data.hospitalizedUntil !== undefined) p.hospitalizedUntil = data.hospitalizedUntil;
             if (data.cash?.decrement !== undefined) p.cash = Number(p.cash) - Number(data.cash.decrement);
             if (data.cash?.increment !== undefined) p.cash = Number(p.cash) + Number(data.cash.increment);
             if (typeof data.cash === 'number') p.cash = data.cash;

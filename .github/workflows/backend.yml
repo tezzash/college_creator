@@ -79,6 +79,9 @@ jobs:
           ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO authenticated, anon;
           EOF
 
+      - name: Seed Database
+        run: npm run seed:game
+
       - name: Lint & Typecheck
         run: npm run lint
 
