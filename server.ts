@@ -2,13 +2,12 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createServer as createHttpServer } from 'node:http';
 import { AppModule } from './backend/src/app/app.module';
 import { createRateLimiter } from './backend/src/middleware/rate-limit';
 
-const currentFilename = typeof __filename !== 'undefined' ? __filename : fileURLToPath(import.meta.url);
-const currentDirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(currentFilename);
+const currentFilename = typeof __filename !== 'undefined' ? __filename : '';
+const currentDirname = typeof __dirname !== 'undefined' ? __dirname : (currentFilename ? path.dirname(currentFilename) : process.cwd());
 
 async function startServer() {
   if (!process.env.DATABASE_URL || process.env.DATABASE_URL.length < 10) {
@@ -21,7 +20,9 @@ async function startServer() {
   const app = express();
   app.set('trust proxy', 1);
   const appModule = new AppModule();
-  const PORT = process.env.PORT ? Number(process.env.PORT) : appModule.config.port;
+  // In Cloud Run containers, nginx reverse proxy listens on port 8080 and forwards to 3000.
+  // When Cloud Run injects PORT=8080, Node must listen on 3000, while respecting test ports like 3001.
+  const PORT = process.env.PORT && process.env.PORT !== '8080' ? Number(process.env.PORT) : 3000;
   const httpServer = createHttpServer(app);
 
   app.use(cors({
@@ -815,6 +816,7 @@ async function startServer() {
 
   httpServer.on('error', (err: any) => {
     console.error('HTTP Server listen error:', err);
+    process.exit(1);
   });
 
   const server = httpServer.listen(PORT, '0.0.0.0', () => {
