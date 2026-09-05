@@ -20,10 +20,6 @@ async function startServer() {
   const app = express();
   app.set('trust proxy', 1);
   const appModule = new AppModule();
-  // In Cloud Run containers, nginx reverse proxy listens on port 8080 and forwards to 3000.
-  // When Cloud Run injects PORT=8080, Node must listen on 3000, while respecting test ports like 3001.
-  const PORT = process.env.PORT && process.env.PORT !== '8080' ? Number(process.env.PORT) : 3000;
-  const httpServer = createHttpServer(app);
 
   app.use(cors({
     origin: (origin, callback) => {
@@ -49,6 +45,19 @@ async function startServer() {
       }
 
       if (appUrl && (origin === appUrl || origin === preUrl)) {
+        callback(null, true);
+        return;
+      }
+
+      if (
+        origin === 'https://aistudio.google.com' ||
+        origin === 'https://ai.studio'
+      ) {
+        callback(null, true);
+        return;
+      }
+
+      if (process.env.APPLET_ID && origin.includes(process.env.APPLET_ID) && origin.endsWith('.run.app')) {
         callback(null, true);
         return;
       }
@@ -814,30 +823,40 @@ async function startServer() {
     });
   }
 
-  httpServer.on('error', (err: any) => {
-    console.error('HTTP Server listen error:', err);
+  const nginxPort = process.env.NGINX_PORT ? Number(process.env.NGINX_PORT) : null;
+  const envPort = process.env.PORT ? Number(process.env.PORT) : null;
+  const defaultPort = Number(process.env.DEFAULT_APP_PORT) || 3000;
+
+  // In AI Studio / Cloud Run multi-container setups, Nginx listens on NGINX_PORT (8080) and
+  // proxies external traffic to DEFAULT_APP_PORT (3000). The Node process MUST listen on port 3000
+  // and MUST NOT attempt to bind to Nginx's port (8080) to avoid EADDRINUSE collisions.
+  // In environments without Nginx (e.g. standalone tests), respect PORT if provided.
+  let targetPort = defaultPort;
+  if (envPort && Number.isInteger(envPort) && envPort > 0 && envPort <= 65535) {
+    if (!nginxPort || envPort !== nginxPort) {
+      targetPort = envPort;
+    }
+  }
+
+  const srv = createHttpServer(app);
+  srv.on('error', (err: any) => {
+    console.error(`HTTP Server listen error on port ${targetPort}:`, err);
     process.exit(1);
   });
 
-  const server = httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`College Geeks server running on http://0.0.0.0:${PORT}`);
+  srv.listen(targetPort, '0.0.0.0', () => {
+    console.log(`College Geeks server running on http://0.0.0.0:${targetPort}`);
   });
 
-  process.on('SIGTERM', () => {
-    console.log('SIGTERM signal received: closing HTTP server');
-    server.close(() => {
-      console.log('HTTP server closed');
+  const shutdown = () => {
+    console.log('Shutdown signal received: closing HTTP server');
+    srv.close(() => {
       process.exit(0);
     });
-  });
+  };
 
-  process.on('SIGINT', () => {
-    console.log('SIGINT signal received: closing HTTP server');
-    server.close(() => {
-      console.log('HTTP server closed');
-      process.exit(0);
-    });
-  });
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
 startServer().catch((err) => {

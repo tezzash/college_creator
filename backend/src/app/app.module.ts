@@ -29,10 +29,20 @@ export class AppModule {
   constructor(readonly configService = new ConfigService()) {
     this.config = this.configService.load();
     this.healthService = new HealthService(this.config);
-    const isPostgres = !!(this.config.databaseUrl || process.env.DATABASE_URL);
-    this.prisma = isPostgres
-      ? getPrismaClient({ databaseUrl: this.config.databaseUrl })
-      : new PrismaService();
+    const dbUrl = this.config.databaseUrl || process.env.DATABASE_URL;
+    const isPostgres = !!(dbUrl && !dbUrl.includes('campus-memory'));
+    let prismaInstance: any;
+    if (isPostgres) {
+      try {
+        prismaInstance = getPrismaClient({ databaseUrl: this.config.databaseUrl });
+      } catch (err) {
+        console.warn('Unable to initialize PrismaClient, falling back to in-memory PrismaService:', err);
+        prismaInstance = new PrismaService();
+      }
+    } else {
+      prismaInstance = new PrismaService();
+    }
+    this.prisma = prismaInstance;
 
     this.databasePlayerService = new DatabasePlayerService(this.prisma);
     this.databaseJobsService = new DatabaseJobsService(this.prisma);

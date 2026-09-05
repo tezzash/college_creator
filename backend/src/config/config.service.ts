@@ -15,9 +15,11 @@ export class ConfigService {
     const rawSecret = this.readOptional('JWT_SECRET');
 
     const corsRaw = this.readOptional('CORS_ORIGINS') ?? this.readOptional('CORS_ORIGIN');
-    const corsOrigins = corsRaw
+    const parsedOrigins = corsRaw
       ? corsRaw.split(',').map((o) => o.trim()).filter(Boolean)
-      : [DEFAULT_CORS_ORIGIN];
+      : [];
+    const validOrigins = parsedOrigins.filter((o) => o === '*' || o.startsWith('http://') || o.startsWith('https://'));
+    const corsOrigins = validOrigins.length > 0 ? validOrigins : [DEFAULT_CORS_ORIGIN];
     const corsOrigin = corsOrigins[0] ?? DEFAULT_CORS_ORIGIN;
 
     const config: AppConfig = {
